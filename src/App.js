@@ -1,21 +1,10 @@
 import { useEffect, useState } from "react";
-import { faker } from "@faker-js/faker";
-
-function createRandomPost() {
-  return {
-    title: `${faker.hacker.adjective()} ${faker.hacker.noun()}`,
-    body: faker.hacker.phrase(),
-  };
-}
 
 function App() {
-  const [posts, setPosts] = useState(() =>
-    Array.from({ length: 30 }, () => createRandomPost())
-  );
+  const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFakeDark, setIsFakeDark] = useState(false);
 
-  // Derived state. These are the posts that will actually be displayed
   const searchedPosts =
     searchQuery.length > 0
       ? posts.filter((post) =>
@@ -33,7 +22,6 @@ function App() {
     setPosts([]);
   }
 
-  // Whenever `isFakeDark` changes, we toggle the `fake-dark-mode` class on the HTML element (see in "Elements" dev tool).
   useEffect(
     function () {
       document.documentElement.classList.toggle("fake-dark-mode");
@@ -58,7 +46,6 @@ function App() {
       />
       <Main posts={searchedPosts} onAddPost={handleAddPost} />
       <Archive onAddPost={handleAddPost} />
-      <Footer />
     </section>
   );
 }
@@ -66,9 +53,7 @@ function App() {
 function Header({ posts, onClearPosts, searchQuery, setSearchQuery }) {
   return (
     <header>
-      <h1>
-        <span>⚛️</span>The Atomic Blog
-      </h1>
+      <h1>NoteNest</h1>
       <div>
         <Results posts={posts} />
         <SearchPosts
@@ -92,7 +77,7 @@ function SearchPosts({ searchQuery, setSearchQuery }) {
 }
 
 function Results({ posts }) {
-  return <p>🚀 {posts.length} atomic posts found</p>;
+  return <p> {posts.length} Notes found</p>;
 }
 
 function Main({ posts, onAddPost }) {
@@ -147,6 +132,7 @@ function List({ posts }) {
       {posts.map((post, i) => (
         <li key={i}>
           <h3>{post.title}</h3>
+
           <p>{post.body}</p>
         </li>
       ))}
@@ -155,11 +141,7 @@ function List({ posts }) {
 }
 
 function Archive({ onAddPost }) {
-  // Here we don't need the setter function. We're only using state to store these posts because the callback function passed into useState (which generates the posts) is only called once, on the initial render. So we use this trick as an optimization technique, because if we just used a regular variable, these posts would be re-created on every render. We could also move the posts outside the components, but I wanted to show you this trick 😉
-  const [posts] = useState(() =>
-    // 💥 WARNING: This might make your computer slow! Try a smaller `length` first
-    Array.from({ length: 10000 }, () => createRandomPost())
-  );
+  const [posts] = useState([]);
 
   const [showArchive, setShowArchive] = useState(false);
 
@@ -184,10 +166,6 @@ function Archive({ onAddPost }) {
       )}
     </aside>
   );
-}
-
-function Footer() {
-  return <footer>&copy; by The Atomic Blog ✌️</footer>;
 }
 
 export default App;

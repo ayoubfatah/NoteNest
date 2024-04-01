@@ -1,25 +1,29 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+
+// 1. create a context
+const NoteContext = createContext();
 
 function App() {
-  const [posts, setPosts] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFakeDark, setIsFakeDark] = useState(false);
-
-  const searchedPosts =
+  const [clearedNotes, setClearedNotes] = useState([]);
+  const searchedNotes =
     searchQuery.length > 0
-      ? posts.filter((post) =>
-          `${post.title} ${post.body}`
+      ? notes.filter((note) =>
+          `${note.title} ${note.body}`
             .toLowerCase()
             .includes(searchQuery.toLowerCase())
         )
-      : posts;
+      : notes;
 
-  function handleAddPost(post) {
-    setPosts((posts) => [post, ...posts]);
+  function handleAddNote(note) {
+    setNotes((notes) => [note, ...notes]);
   }
 
-  function handleClearPosts() {
-    setPosts([]);
+  function handleClearNotes() {
+    setClearedNotes((n) => [notes, ...n]);
+    setNotes([]);
   }
 
   useEffect(
@@ -30,81 +34,91 @@ function App() {
   );
 
   return (
-    <section>
-      <button
-        onClick={() => setIsFakeDark((isFakeDark) => !isFakeDark)}
-        className="btn-fake-dark-mode"
-      >
-        {isFakeDark ? "☀️" : "🌙"}
-      </button>
+    // 2. provide value to child components
+    <NoteContext.Provider
+      value={{
+        notes: searchedNotes,
+        onClearNotes: handleClearNotes,
+        onAddNote: handleAddNote,
+        searchQuery,
+        setSearchQuery,
+        clearedNotes,
+      }}
+    >
+      <section>
+        <button
+          onClick={() => setIsFakeDark((isFakeDark) => !isFakeDark)}
+          className="btn-fake-dark-mode"
+        >
+          {isFakeDark ? "☀️" : "🌙"}
+        </button>
 
-      <Header
-        posts={searchedPosts}
-        onClearPosts={handleClearPosts}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-      <Main posts={searchedPosts} onAddPost={handleAddPost} />
-      <Archive onAddPost={handleAddPost} />
-    </section>
+        <Header />
+        <Main notes={searchedNotes} onAddNote={handleAddNote} />
+        <Archive onAddNote={handleAddNote} />
+      </section>
+    </NoteContext.Provider>
   );
 }
 
-function Header({ posts, onClearPosts, searchQuery, setSearchQuery }) {
+function Header() {
+  const { onClearNotes } = useContext(NoteContext);
+
   return (
     <header>
       <h1>NoteNest</h1>
       <div>
-        <Results posts={posts} />
-        <SearchPosts
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
-        <button onClick={onClearPosts}>Clear posts</button>
+        <Results />
+        <SearchNotes />
+        <button onClick={onClearNotes}>Clear notes</button>
       </div>
     </header>
   );
 }
 
-function SearchPosts({ searchQuery, setSearchQuery }) {
+function SearchNotes() {
+  const { searchQuery, setSearchQuery } = useContext(NoteContext);
   return (
     <input
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
-      placeholder="Search posts..."
+      placeholder="Search notes..."
     />
   );
 }
 
-function Results({ posts }) {
-  return <p> {posts.length} Notes found</p>;
+function Results() {
+  const { notes } = useContext(NoteContext);
+  return <p> {notes.length} Notes found</p>;
 }
 
-function Main({ posts, onAddPost }) {
+function Main() {
   return (
     <main>
-      <FormAddPost onAddPost={onAddPost} />
-      <Posts posts={posts} />
+      <FormAddNote />
+      <Notes />
     </main>
   );
 }
 
-function Posts({ posts }) {
+function Notes() {
+  const { notes } = useContext(NoteContext);
   return (
     <section>
-      <List posts={posts} />
+      <List notes={notes} />
     </section>
   );
 }
 
-function FormAddPost({ onAddPost }) {
+function FormAddNote() {
+  const { onAddNote } = useContext(NoteContext);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
   const handleSubmit = function (e) {
     e.preventDefault();
     if (!body || !title) return;
-    onAddPost({ title, body });
+    onAddNote({ title, body });
     setTitle("");
     setBody("");
   };
@@ -114,52 +128,53 @@ function FormAddPost({ onAddPost }) {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Post title"
+        placeholder="Note title"
       />
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="Post body"
+        placeholder="Note body"
       />
-      <button>Add post</button>
+      <button>Add note</button>
     </form>
   );
 }
 
-function List({ posts }) {
+function List() {
+  const { notes } = useContext(NoteContext);
   return (
     <ul>
-      {posts.map((post, i) => (
+      {notes.map((note, i) => (
         <li key={i}>
-          <h3>{post.title}</h3>
-
-          <p>{post.body}</p>
+          <h3>{note.title}</h3>
+          <p>{note.body}</p>
         </li>
       ))}
     </ul>
   );
 }
 
-function Archive({ onAddPost }) {
-  const [posts] = useState([]);
+function Archive() {
+  const { onAddNote, clearedNotes } = useContext(NoteContext);
 
   const [showArchive, setShowArchive] = useState(false);
-
+  const [cleared] = clearedNotes;
+  console.log(cleared, "hjaaaaa");
   return (
     <aside>
-      <h2>Post archive</h2>
+      <h2>Note archive</h2>
       <button onClick={() => setShowArchive((s) => !s)}>
-        {showArchive ? "Hide archive posts" : "Show archive posts"}
+        {showArchive ? "Hide archive notes" : "Show archive notes"}
       </button>
 
       {showArchive && (
         <ul>
-          {posts.map((post, i) => (
+          {cleared.map((note, i) => (
             <li key={i}>
               <p>
-                <strong>{post.title}:</strong> {post.body}
+                <strong>{note.title}:</strong> {note.body}
               </p>
-              <button onClick={() => onAddPost(post)}>Add as new post</button>
+              <button onClick={() => onAddNote(note)}>Add as new note</button>
             </li>
           ))}
         </ul>

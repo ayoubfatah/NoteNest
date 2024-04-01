@@ -176,3 +176,12 @@ aside li button {
   padding: 4px 8px;
   font-size: 14px;
 }
+
+.time {
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.bodyinput {
+  width: 64%;
+}

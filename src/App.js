@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-
+import useDate from "./useDate";
 // 1. create a context
 const NoteContext = createContext();
 
@@ -111,17 +111,33 @@ function Notes() {
 }
 
 function FormAddNote() {
+  const { currentDate } = useDate();
+
   const { onAddNote } = useContext(NoteContext);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
-  const handleSubmit = function (e) {
+  function handleSubmit(e) {
     e.preventDefault();
     if (!body || !title) return;
-    onAddNote({ title, body });
+    onAddNote({ title, body, time: currentDate });
     setTitle("");
     setBody("");
-  };
+  }
+
+  useEffect(() => {
+    const handleKeyDown = function (e) {
+      if (e.key === "Enter") {
+        handleSubmit(e);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleSubmit]);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -130,7 +146,8 @@ function FormAddNote() {
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
       />
-      <textarea
+      <input
+        className="bodyinput"
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Note body"
@@ -148,6 +165,7 @@ function List() {
         <li key={i}>
           <h3>{note.title}</h3>
           <p>{note.body}</p>
+          <p className="time"> {note.time}</p>
         </li>
       ))}
     </ul>
@@ -159,7 +177,6 @@ function Archive() {
 
   const [showArchive, setShowArchive] = useState(false);
   const [cleared] = clearedNotes;
-  console.log(cleared, "hjaaaaa");
   return (
     <aside>
       <h2>Note archive</h2>
@@ -167,7 +184,7 @@ function Archive() {
         {showArchive ? "Hide archive notes" : "Show archive notes"}
       </button>
 
-      {showArchive && (
+      {showArchive && cleared && (
         <ul>
           {cleared.map((note, i) => (
             <li key={i}>
